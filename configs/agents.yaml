@@ -1,8 +1,9 @@
 agents:
   literature:
     display_name: "Literature Review Agent"
-    provider: claude
-    model: claude-opus-4-6
+    provider: gemini
+    model: gemini-3-flash-preview
+    fallback_model: gemini-3-pro-preview
     temperature: 0.5
     max_iterations: 40
     skills:
@@ -73,7 +74,8 @@ agents:
   design:
     display_name: "Technical Design Agent"
     provider: claude
-    model: claude-opus-4-6
+    model: claude-sonnet-4-6
+    fallback_model: claude-opus-4-6
     temperature: 0.6
     max_iterations: 35
     skills:
@@ -114,6 +116,7 @@ agents:
     display_name: "Code Implementation Agent"
     provider: claude
     model: claude-sonnet-4-6-cc
+    fallback_model: claude-opus-4-6-cc
     temperature: 0.3
     max_iterations: 50
     skills:
@@ -153,6 +156,7 @@ agents:
     display_name: "Experimenter Agent"
     provider: claude
     model: claude-sonnet-4-6-cc
+    fallback_model: claude-opus-4-6-cc
     temperature: 0.3
     max_iterations: 40
     skills:
@@ -193,7 +197,8 @@ agents:
   analyst:
     display_name: "Analysis Agent"
     provider: gemini
-    model: gemini-2.5-pro
+    model: gemini-3-flash-preview
+    fallback_model: gemini-3-pro-preview
     temperature: 0.5
     max_iterations: 35
     skills:
@@ -233,8 +238,8 @@ agents:
 
   writer:
     display_name: "Paper Writing Agent"
-    provider: claude
-    model: claude-opus-4-6
+    provider: openai
+    model: gpt-5.3-chat
     temperature: 0.7
     max_iterations: 45
     skills:
@@ -280,10 +285,12 @@ agents:
       - Well-formatted tables for results (only with real data)
       - Honest discussion of limitations
 
-  reviewer:
-    display_name: "Peer Review Agent"
-    provider: openai
-    model: gpt-4o
+  # ---- Cross-Review Agents (3 models for peer review) ----
+
+  reviewer_claude:
+    display_name: "Reviewer (Claude)"
+    provider: claude
+    model: claude-sonnet-4-6
     temperature: 0.8
     max_iterations: 25
     skills:
@@ -293,12 +300,12 @@ agents:
       - paper/draft.md
     output_dir: review
     system_prompt: |
-      You are a critical but fair peer reviewer for a top AI conference (NeurIPS/ICML/ICLR).
-      You have access to the paper draft.
+      You are Reviewer 1 (Claude) — a critical but fair peer reviewer for a top AI conference.
+      Write your review to review/review_claude.md.
 
       Your task:
       1. Read the paper draft carefully
-      2. Write a detailed peer review (review/review.md) covering:
+      2. Write a detailed peer review covering:
          - Summary of the paper (2-3 sentences)
          - Strengths (bullet list, be specific)
          - Weaknesses (bullet list, be specific and constructive)
@@ -307,20 +314,71 @@ agents:
          - Overall recommendation: Accept / Weak Accept / Weak Reject / Reject
          - Confidence: 1-5
          - Score: 1-10
-      3. Be rigorous but constructive. Focus on:
-         - Technical correctness
-         - Novelty and significance
-         - Experimental rigor — flag any results that appear fabricated, lack
-           experimental backing, or are presented without methodology details
-         - If the paper contains "[TODO]" or "[PENDING]" placeholders, note these
-           as incomplete sections, do NOT treat them as weaknesses of the method itself
-         - Clarity of presentation
-         - Related work coverage
-         - Reproducibility
+      3. Focus on: technical correctness, novelty, experimental rigor, reproducibility
 
-      IMPORTANT: If you detect results that appear to be fabricated or not backed by
-      actual experiments (e.g., overly clean numbers, missing variance, results that
-      perfectly match "expected" outcomes from a design doc), flag this explicitly as
-      a critical issue in your review.
+      IMPORTANT: If you detect results that appear fabricated or not backed by actual
+      experiments, flag this explicitly as a critical issue.
 
-      Provide actionable feedback that the authors can use to improve the paper.
+  reviewer_gpt:
+    display_name: "Reviewer (GPT)"
+    provider: openai
+    model: gpt-5.3-chat
+    temperature: 0.8
+    max_iterations: 25
+    skills:
+      - file_read
+      - file_write
+    input_files:
+      - paper/draft.md
+    output_dir: review
+    system_prompt: |
+      You are Reviewer 2 (GPT) — a critical but fair peer reviewer for a top AI conference.
+      Write your review to review/review_gpt.md.
+
+      Your task:
+      1. Read the paper draft carefully
+      2. Write a detailed peer review covering:
+         - Summary of the paper (2-3 sentences)
+         - Strengths (bullet list, be specific)
+         - Weaknesses (bullet list, be specific and constructive)
+         - Questions for authors
+         - Requested changes (required vs optional)
+         - Overall recommendation: Accept / Weak Accept / Weak Reject / Reject
+         - Confidence: 1-5
+         - Score: 1-10
+      3. Focus on: clarity of presentation, related work coverage, significance of contribution
+
+      IMPORTANT: If you detect results that appear fabricated or not backed by actual
+      experiments, flag this explicitly as a critical issue.
+
+  reviewer_gemini:
+    display_name: "Reviewer (Gemini)"
+    provider: gemini
+    model: gemini-3-pro-preview
+    temperature: 0.8
+    max_iterations: 25
+    skills:
+      - file_read
+      - file_write
+    input_files:
+      - paper/draft.md
+    output_dir: review
+    system_prompt: |
+      You are Reviewer 3 (Gemini) — a critical but fair peer reviewer for a top AI conference.
+      Write your review to review/review_gemini.md.
+
+      Your task:
+      1. Read the paper draft carefully
+      2. Write a detailed peer review covering:
+         - Summary of the paper (2-3 sentences)
+         - Strengths (bullet list, be specific)
+         - Weaknesses (bullet list, be specific and constructive)
+         - Questions for authors
+         - Requested changes (required vs optional)
+         - Overall recommendation: Accept / Weak Accept / Weak Reject / Reject
+         - Confidence: 1-5
+         - Score: 1-10
+      3. Focus on: experimental methodology, statistical rigor, scalability analysis
+
+      IMPORTANT: If you detect results that appear fabricated or not backed by actual
+      experiments, flag this explicitly as a critical issue.

@@ -43,7 +43,11 @@ pipeline:
       depends_on: [analysis]
 
     - name: review
-      display_name: "Peer Review"
-      agent: reviewer
+      display_name: "Cross-Model Peer Review"
+      agent: reviewer_claude  # Primary (used if agents list is empty)
+      agents:                 # Multi-agent: run all 3 reviewers
+        - reviewer_claude
+        - reviewer_gpt
+        - reviewer_gemini
       auto_proceed: false  # User checkpoint: revise or submit
       depends_on: [paper]

@@ -121,14 +121,19 @@ class Orchestrator:
         self._print_status()
 
     async def _run_stage(self, stage: StageConfig, task: str) -> AgentResult:
-        """Run a single stage with Rich UI."""
+        """Run a single stage with Rich UI. Supports multi-agent and fallback."""
+        # Multi-agent stage (e.g. cross-review with 3 models)
+        if stage.agents:
+            return await self._run_multi_agent_stage(stage, task)
+
         agent_config = self.config.agents[stage.agent]
 
         # Show stage header
         console.print(Panel(
             f"[bold]{stage.display_name}[/bold]\n"
             f"Agent: {agent_config.display_name}  "
-            f"Model: {agent_config.provider}/{agent_config.model}",
+            f"Model: {agent_config.model}"
+            f"{' → ' + agent_config.fallback_model if agent_config.fallback_model else ''}",
             title=f"Stage: {stage.name}",
             style="blue",
         ))
@@ -154,8 +159,29 @@ class Orchestrator:
             result = await agent.run(task, on_event=on_event)
         except Exception as e:
             logger.exception("Stage %s error", stage.name)
-            self.workspace.update_project_state(stage.name, "failed")
-            return AgentResult(success=False, agent_name=stage.agent, error=str(e))
+            result = AgentResult(success=False, agent_name=stage.agent, error=str(e))
+
+        # Fallback: if primary model failed and a fallback is configured, retry
+        if not result.success and agent_config.fallback_model:
+            console.print(
+                f"\n[yellow]Primary model failed, escalating to {agent_config.fallback_model}[/yellow]"
+            )
+            fallback_config = agent_config.model_copy()
+            fallback_config.model = agent_config.fallback_model
+            fallback_config.fallback_model = ""  # Don't chain fallbacks
+
+            fallback_agent = build_agent(
+                agent_name=stage.agent,
+                config=fallback_config,
+                workspace=self.workspace,
+                ssh_client=self._get_ssh(),
+                cost_tracker=self._cost_tracker,
+            )
+            try:
+                result = await fallback_agent.run(task, on_event=on_event)
+            except Exception as e:
+                logger.exception("Stage %s fallback error", stage.name)
+                result = AgentResult(success=False, agent_name=stage.agent, error=str(e))
 
         if result.success:
             self.workspace.update_project_state(
@@ -170,6 +196,68 @@ class Orchestrator:
             self.workspace.update_project_state(stage.name, "failed")
 
         return result
+
+    async def _run_multi_agent_stage(self, stage: StageConfig, task: str) -> AgentResult:
+        """Run multiple agents for a single stage (e.g. cross-review)."""
+        console.print(Panel(
+            f"[bold]{stage.display_name}[/bold]\n"
+            f"Cross-agent stage: {', '.join(stage.agents)}",
+            title=f"Stage: {stage.name}",
+            style="magenta",
+        ))
+
+        self.workspace.update_project_state(stage.name, "running")
+
+        if self._cost_tracker is None:
+            self._cost_tracker = CostTracker.load(self.workspace)
+
+        all_output_files: list[str] = []
+        all_results: list[AgentResult] = []
+
+        for agent_name in stage.agents:
+            agent_config = self.config.agents[agent_name]
+            console.print(f"\n  [cyan]Running {agent_config.display_name} ({agent_config.model})[/cyan]")
+
+            agent = build_agent(
+                agent_name=agent_name,
+                config=agent_config,
+                workspace=self.workspace,
+                ssh_client=self._get_ssh(),
+                cost_tracker=self._cost_tracker,
+            )
+
+            def on_event(event: AgentEvent) -> None:
+                _render_event(event)
+
+            try:
+                result = await agent.run(task, on_event=on_event)
+            except Exception as e:
+                logger.exception("Multi-agent %s error", agent_name)
+                result = AgentResult(success=False, agent_name=agent_name, error=str(e))
+
+            all_results.append(result)
+            if result.success:
+                all_output_files.extend(result.output_files)
+                console.print(f"  [green]✓ {agent_config.display_name} done[/green]")
+            else:
+                console.print(f"  [red]✗ {agent_config.display_name} failed: {result.error}[/red]")
+
+        # Stage succeeds if at least one agent succeeded
+        any_success = any(r.success for r in all_results)
+        if any_success:
+            self.workspace.update_project_state(stage.name, "done", all_output_files)
+            console.print(f"\n[green]✓ {stage.display_name} complete ({len(all_results)} reviews)[/green]")
+        else:
+            self.workspace.update_project_state(stage.name, "failed")
+
+        return AgentResult(
+            success=any_success,
+            agent_name=",".join(stage.agents),
+            output_files=all_output_files,
+            summary=f"{sum(1 for r in all_results if r.success)}/{len(all_results)} agents succeeded",
+            iterations=sum(r.iterations for r in all_results),
+            total_tokens=sum(r.total_tokens for r in all_results),
+        )
 
     # ------------------------------------------------------------------
     # Single agent

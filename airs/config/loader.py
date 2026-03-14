@@ -24,6 +24,7 @@ class AgentConfig(BaseModel):
     display_name: str
     provider: str           # "claude" | "openai" | "gemini"
     model: str
+    fallback_model: str = ""  # Escalation model when primary fails
     base_url: str = ""      # Custom API base URL (for proxy providers)
     temperature: float = 0.7
     max_iterations: int = 30
@@ -36,7 +37,8 @@ class AgentConfig(BaseModel):
 class StageConfig(BaseModel):
     name: str
     display_name: str
-    agent: str
+    agent: str              # Primary agent name
+    agents: list[str] = Field(default_factory=list)  # Multi-agent (e.g. cross-review)
     auto_proceed: bool = True
     depends_on: list[str] = Field(default_factory=list)
 

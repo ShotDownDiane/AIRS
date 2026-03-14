@@ -23,6 +23,10 @@ _AGENT_CLASS_MAP: dict[str, type[BaseAgent]] = {
     "analyst": AnalystAgent,
     "writer": WriterAgent,
     "reviewer": ReviewerAgent,
+    # Cross-review variants (same class, different configs)
+    "reviewer_claude": ReviewerAgent,
+    "reviewer_gpt": ReviewerAgent,
+    "reviewer_gemini": ReviewerAgent,
 }
 
 
