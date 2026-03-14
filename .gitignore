@@ -1,0 +1,16 @@
+workspace/
+*.pyc
+__pycache__/
+.env
+configs/ssh.yaml
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+*.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk

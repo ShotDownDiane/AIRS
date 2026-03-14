@@ -1,0 +1,9 @@
+# SSH Configuration — copy to configs/ssh.yaml and fill in your details
+ssh:
+  host: your.gpu.server.com
+  port: 22
+  username: your_username
+  key_file: ~/.ssh/id_rsa   # Path to private key (leave empty to use password)
+  password:                  # Leave empty if using key_file
+  remote_workspace: ~/airs_workspace
+  connect_timeout: 30

@@ -1,0 +1,49 @@
+pipeline:
+  stages:
+    - name: literature
+      display_name: "Literature Review"
+      agent: literature
+      auto_proceed: true
+      depends_on: []
+
+    - name: ideation
+      display_name: "Ideation"
+      agent: ideation
+      auto_proceed: false  # User checkpoint: select idea
+      depends_on: [literature]
+
+    - name: design
+      display_name: "Technical Design"
+      agent: design
+      auto_proceed: true
+      depends_on: [ideation]
+
+    - name: code
+      display_name: "Code Implementation"
+      agent: coder
+      auto_proceed: true
+      depends_on: [design]
+
+    - name: experiments
+      display_name: "Experiments"
+      agent: experimenter
+      auto_proceed: true
+      depends_on: [code]
+
+    - name: analysis
+      display_name: "Result Analysis"
+      agent: analyst
+      auto_proceed: true
+      depends_on: [experiments]
+
+    - name: paper
+      display_name: "Paper Writing"
+      agent: writer
+      auto_proceed: true
+      depends_on: [analysis]
+
+    - name: review
+      display_name: "Peer Review"
+      agent: reviewer
+      auto_proceed: false  # User checkpoint: revise or submit
+      depends_on: [paper]
