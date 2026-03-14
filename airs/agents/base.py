@@ -291,10 +291,24 @@ class BaseAgent:
             total_tokens=total_tokens,
         )
 
+    # Universal rule injected into every agent's system prompt.
+    GLOBAL_RULES = (
+        "\n\n# MANDATORY RULES (apply to ALL agents)\n\n"
+        "1. NEVER fabricate, hallucinate, or guess experimental data, metrics, or results. "
+        "Only report numbers that come from actual experiment outputs you can read via file_read. "
+        "If experimental results are missing or incomplete, explicitly state that and leave "
+        "placeholders like '[PENDING: run experiment X]' instead of inventing numbers.\n"
+        "2. NEVER generate fake tables, fake baseline comparisons, or projected/estimated results. "
+        "An empty section with a clear explanation is always better than fabricated data.\n"
+        "3. If prior stage outputs are missing data you need, state what is missing and what "
+        "needs to be done to obtain it. Do not fill gaps with guesses.\n"
+    )
+
     def _build_initial_messages(self, task: str) -> list[Message]:
         """Build the initial message list with system prompt, context, and task."""
+        system_prompt = self.config.system_prompt + self.GLOBAL_RULES
         messages: list[Message] = [
-            Message(role="system", content=self.config.system_prompt)
+            Message(role="system", content=system_prompt)
         ]
 
         # Inject input file contents
