@@ -31,7 +31,8 @@ def build_agent(
     config: AgentConfig,
     workspace: WorkspaceManager,
     ssh_client=None,
+    cost_tracker=None,
 ) -> BaseAgent:
     """Instantiate the right agent class for the given name."""
     cls = _AGENT_CLASS_MAP.get(agent_name, BaseAgent)
-    return cls(config=config, workspace=workspace, ssh_client=ssh_client)
+    return cls(config=config, workspace=workspace, ssh_client=ssh_client, cost_tracker=cost_tracker)

@@ -12,6 +12,7 @@ class Message:
     role: Literal["system", "user", "assistant", "tool_result"]
     content: str
     tool_call_id: str | None = None  # For tool_result messages
+    tool_calls: list["ToolCall"] | None = None  # For assistant messages with tool calls
 
 
 @dataclass

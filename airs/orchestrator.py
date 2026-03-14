@@ -16,6 +16,7 @@ from rich.text import Text
 from airs.agents.base import AgentEvent, AgentResult
 from airs.agents.factory import build_agent
 from airs.config.loader import AIRSConfig, StageConfig, load_config
+from airs.cost import CostTracker
 from airs.ssh.client import SSHClient
 from airs.workspace.manager import WorkspaceManager
 
@@ -45,6 +46,7 @@ class Orchestrator:
         self.config = config or load_config()
         self.workspace = WorkspaceManager(project, workspace_root)
         self._ssh: SSHClient | None = None
+        self._cost_tracker: CostTracker | None = None
 
     # ------------------------------------------------------------------
     # SSH
@@ -133,11 +135,16 @@ class Orchestrator:
 
         self.workspace.update_project_state(stage.name, "running")
 
+        # Shared cost tracker
+        if self._cost_tracker is None:
+            self._cost_tracker = CostTracker.load(self.workspace)
+
         agent = build_agent(
             agent_name=stage.agent,
             config=agent_config,
             workspace=self.workspace,
             ssh_client=self._get_ssh(),
+            cost_tracker=self._cost_tracker,
         )
 
         def on_event(event: AgentEvent) -> None:

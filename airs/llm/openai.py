@@ -58,6 +58,25 @@ class OpenAIProvider(BaseProvider):
                     "tool_call_id": msg.tool_call_id,
                     "content": msg.content,
                 })
+            elif msg.role == "assistant" and msg.tool_calls:
+                # Assistant message with tool calls — must use proper format
+                api_msg: dict = {"role": "assistant"}
+                if msg.content:
+                    api_msg["content"] = msg.content
+                else:
+                    api_msg["content"] = None
+                api_msg["tool_calls"] = [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.name,
+                            "arguments": json.dumps(tc.arguments),
+                        },
+                    }
+                    for tc in msg.tool_calls
+                ]
+                api_messages.append(api_msg)
             else:
                 api_messages.append({"role": msg.role, "content": msg.content})
 

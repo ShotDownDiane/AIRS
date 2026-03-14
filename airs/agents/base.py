@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Callable
 
 from airs.config.loader import AgentConfig
+from airs.cost import CostTracker
 from airs.llm.base import BaseProvider, Message, ToolCall, create_provider
 from airs.skills import BaseSkill, build_skill
 from airs.workspace.manager import WorkspaceManager
@@ -54,10 +55,12 @@ class BaseAgent:
         workspace: WorkspaceManager,
         llm: BaseProvider | None = None,
         ssh_client=None,
+        cost_tracker: CostTracker | None = None,
     ):
         self.config = config
         self.workspace = workspace
         self.ssh_client = ssh_client
+        self.cost_tracker = cost_tracker or CostTracker.load(workspace)
 
         # LLM provider
         self.llm = llm or self._build_llm()
@@ -136,11 +139,28 @@ class BaseAgent:
                     messages=messages,
                     tools=tool_defs or None,
                     temperature=self.config.temperature,
+                    max_tokens=16384,
                 )
                 total_tokens += (
                     response.usage.get("input_tokens", 0)
                     + response.usage.get("output_tokens", 0)
                 )
+
+                # Track cost
+                in_tok = response.usage.get("input_tokens", 0)
+                out_tok = response.usage.get("output_tokens", 0)
+                tool_names = [tc.name for tc in response.tool_calls] if response.tool_calls else []
+                cost_record = self.cost_tracker.add(
+                    agent=name,
+                    model=self.config.model,
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    tool_calls=tool_names,
+                )
+                self.cost_tracker.save(self.workspace)
+
+                # Save live history (last 10 interactions)
+                self._save_live_history(name, messages, response, iterations, total_tokens)
 
                 # Emit thinking event if there's text content
                 if response.content:
@@ -151,9 +171,27 @@ class BaseAgent:
                             data={"text": response.content[:500]},
                         ))
 
-                # No tool calls → agent is done
+                # No tool calls → agent is done or truncated
                 if not response.tool_calls:
-                    # Append final assistant message
+                    # Handle truncation: if output was cut off, ask agent to use file_write instead
+                    if response.finish_reason == "length":
+                        logger.warning("Agent %s output truncated at iteration %d", name, iterations)
+                        messages.append(Message(
+                            role="assistant",
+                            content=response.content or "",
+                        ))
+                        messages.append(Message(
+                            role="user",
+                            content=(
+                                "Your output was truncated because it was too long. "
+                                "Do NOT write long text directly. Instead, use the file_write tool "
+                                "to write content to files in sections. Break your output into "
+                                "multiple file_write calls if needed. Continue your task now."
+                            ),
+                        ))
+                        continue
+
+                    # Normal completion
                     messages.append(Message(
                         role="assistant",
                         content=response.content or "",
@@ -171,15 +209,12 @@ class BaseAgent:
                         ))
                     break
 
-                # Build assistant message with tool calls
-                # We serialize tool calls as a structured text block for simpler multi-provider support
-                tool_calls_text = json.dumps(
-                    [{"id": tc.id, "name": tc.name, "arguments": tc.arguments}
-                     for tc in response.tool_calls],
-                    indent=2,
-                )
-                assistant_content = (response.content or "") + f"\n[TOOL_CALLS]\n{tool_calls_text}"
-                messages.append(Message(role="assistant", content=assistant_content))
+                # Build assistant message with tool calls (structured, not text)
+                messages.append(Message(
+                    role="assistant",
+                    content=response.content or "",
+                    tool_calls=response.tool_calls,
+                ))
 
                 # Execute each tool call
                 for tc in response.tool_calls:
@@ -289,12 +324,8 @@ class BaseAgent:
         """Extract the last substantial assistant message as summary."""
         for msg in reversed(messages):
             if msg.role == "assistant" and msg.content and len(msg.content) > 50:
-                # Strip tool call JSON from summary
-                content = msg.content
-                if "[TOOL_CALLS]" in content:
-                    content = content.split("[TOOL_CALLS]")[0].strip()
-                if content:
-                    return content
+                if not msg.tool_calls:
+                    return msg.content
         return ""
 
     def _write_log(
@@ -319,3 +350,59 @@ class BaseAgent:
             self.workspace.write_agent_log(name, log)
         except Exception as e:
             logger.warning("Failed to write agent log: %s", e)
+
+    def _save_live_history(
+        self,
+        name: str,
+        messages: list[Message],
+        response,
+        iterations: int,
+        total_tokens: int,
+    ) -> None:
+        """Save last 10 request/response pairs to a live history file for debugging."""
+        try:
+            # Collect recent messages (skip system prompt, take last 20 messages = ~10 pairs)
+            recent = messages[-20:] if len(messages) > 20 else messages[1:]  # skip system
+
+            history_entries = []
+            for msg in recent:
+                entry = {
+                    "role": msg.role,
+                    "content": (msg.content or "")[:2000],
+                }
+                if msg.tool_call_id:
+                    entry["tool_call_id"] = msg.tool_call_id
+                if msg.tool_calls:
+                    entry["tool_calls"] = [
+                        {"name": tc.name, "args_keys": list(tc.arguments.keys())}
+                        for tc in msg.tool_calls
+                    ]
+                history_entries.append(entry)
+
+            # Add current response
+            history_entries.append({
+                "role": "assistant (current)",
+                "content": (response.content or "")[:2000],
+                "finish_reason": response.finish_reason,
+                "tool_calls": [
+                    {"name": tc.name, "args_keys": list(tc.arguments.keys())}
+                    for tc in response.tool_calls
+                ] if response.tool_calls else [],
+                "usage": response.usage,
+            })
+
+            live_log = {
+                "agent": name,
+                "model": self.config.model,
+                "iteration": iterations,
+                "total_tokens": total_tokens,
+                "timestamp": datetime.utcnow().isoformat(),
+                "recent_history": history_entries,
+            }
+
+            self.workspace.write(
+                f"logs/{name}_live.json",
+                json.dumps(live_log, indent=2, ensure_ascii=False, default=str),
+            )
+        except Exception as e:
+            logger.warning("Failed to write live history: %s", e)

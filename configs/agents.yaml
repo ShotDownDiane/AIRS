@@ -7,6 +7,7 @@ agents:
     max_iterations: 40
     skills:
       - arxiv
+      - arxiv_download
       - web_search
       - file_read
       - file_write
@@ -92,24 +93,27 @@ agents:
          - Problem formulation and notation
          - Proposed method with mathematical details
          - Model architecture (if applicable)
+         - **Computational complexity analysis**: for EVERY component, state the Big-O complexity
+           in terms of batch size B, sequence length T, number of nodes N, hidden dim d, etc.
+           Ensure total complexity scales reasonably (linear or near-linear in data size).
+           NEVER design components whose complexity depends on dataset size at inference time.
+         - **Scalability analysis**: verify the design works for 2x, 10x larger inputs.
+           Prefer fixed-size learnable parameters over data-dependent structures (e.g. learnable
+           memory banks over FAISS indices, attention over nearest-neighbor search).
          - Training procedure and hyperparameters
          - Evaluation metrics and baselines
          - Dataset requirements
-         - Compute requirements (GPU hours, memory)
-      3. Create an architecture document (design/architecture.md) with:
-         - Directory structure for the code
-         - Key modules/classes and their interfaces
-         - Data flow diagram (ASCII art)
-         - Configuration schema
-         - Experiment tracking setup
+         - Compute requirements (GPU hours, memory estimate per batch)
+      3. Write the design to file using file_write. Break into multiple writes if content is long.
 
-      Be concrete and implementation-ready. Another engineer should be able to implement
-      this design without ambiguity.
+      CRITICAL: Every design choice must be justified with complexity analysis.
+      Avoid designs that require separate indexing phases, external libraries for retrieval,
+      or complexity that grows with training set size. Keep it simple and scalable.
 
   coder:
     display_name: "Code Implementation Agent"
     provider: claude
-    model: claude-sonnet-4-6
+    model: claude-sonnet-4-6-cc
     temperature: 0.3
     max_iterations: 50
     skills:
@@ -148,7 +152,7 @@ agents:
   experimenter:
     display_name: "Experimenter Agent"
     provider: claude
-    model: claude-sonnet-4-6
+    model: claude-sonnet-4-6-cc
     temperature: 0.3
     max_iterations: 40
     skills:
@@ -234,31 +238,23 @@ agents:
       - analysis/analysis.md
     output_dir: paper
     system_prompt: |
-      You are an expert academic writer writing a research paper for a top AI venue (NeurIPS/ICML/ICLR).
+      You are an expert academic writer writing sections of a research paper for a top AI venue (NeurIPS/ICML/ICLR).
       You have access to all prior stage outputs.
 
       Your task:
       1. Read all provided documents carefully
-      2. Write a complete paper draft in Markdown (paper/draft.md) structured as:
-         - Abstract (150-250 words)
-         - Introduction (motivation, contributions, paper organization)
-         - Related Work (organized by theme, cite from literature survey)
-         - Method (technical details from design doc)
-         - Experiments (results tables, key findings)
-         - Analysis/Ablation (from analysis doc)
-         - Conclusion
-         - References
-      3. Convert to LaTeX (paper/paper.tex) following NeurIPS format:
-         - Use \documentclass[preprint]{neurips_2024}
-         - Include proper bibliography with bibtex entries
-         - Include figures (reference analysis/figures/ with \includegraphics)
-      4. Compile the LaTeX with latex_compile skill
-      5. Fix any compilation errors and recompile
+      2. Write ONLY two sections in Markdown (paper/draft.md):
+         - Method section: detailed technical approach from design doc, with mathematical formulations,
+           model architecture description, training procedure, and algorithm pseudocode if applicable
+         - Experiments section: experimental setup, datasets, baselines, main results tables,
+           ablation studies, and analysis of key findings
+      3. Include proper citations referencing papers from the literature survey
+      4. Use file_write to save the draft. Break into multiple writes if content is long.
 
       Writing style:
       - Precise and concise academic writing
-      - Strong motivation in introduction
-      - Clear comparison to related work
+      - Clear mathematical notation
+      - Well-formatted tables for results
       - Honest discussion of limitations
 
   reviewer:

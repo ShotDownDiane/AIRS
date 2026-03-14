@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from airs.skills.arxiv import ArxivSkill
+from airs.skills.arxiv_download import ArxivDownloadSkill
 from airs.skills.base import BaseSkill
 from airs.skills.file_read import FileReadSkill
 from airs.skills.file_write import FileWriteSkill
@@ -14,6 +15,7 @@ from airs.skills.web_search import WebSearchSkill
 # Registry maps skill name → class
 SKILL_REGISTRY: dict[str, type[BaseSkill]] = {
     "arxiv": ArxivSkill,
+    "arxiv_download": ArxivDownloadSkill,
     "web_search": WebSearchSkill,
     "file_read": FileReadSkill,
     "file_write": FileWriteSkill,
@@ -35,7 +37,7 @@ def build_skill(
     cls = SKILL_REGISTRY[name]
 
     # Skills that need workspace
-    if name in ("file_read", "file_write"):
+    if name in ("file_read", "file_write", "arxiv_download"):
         return cls(workspace=workspace)
 
     # Skills that need SSH

@@ -1,0 +1,89 @@
+created_at: '2026-03-14T07:12:56.479150'
+project: traffic_pems
+stages:
+  analysis:
+    output_files:
+    - analysis/analysis.md
+    status: done
+    updated_at: '2026-03-14T13:03:14.636318'
+  code:
+    output_files:
+    - code/metrics.py
+    - code/config.py
+    - code/requirements.txt
+    - code/memory_builder.py
+    - code/model.py
+    - code/data_utils.py
+    - code/train.py
+    - code/losses.py
+    - code/trainer.py
+    - code/run_experiments.py
+    - code/evaluator.py
+    - code/data.py
+    - code/experiments/baselines.py
+    - code/experiments/train_remxtf.py
+    - code/experiments/prepare_data.py
+    - code/experiments/ablation_study.py
+    - code/experiments/visualize.py
+    - code/experiments/multi_seed_eval.py
+    - code/__pycache__/evaluator.cpython-311.pyc
+    - code/__pycache__/config.cpython-311.pyc
+    - code/__pycache__/memory_builder.cpython-311.pyc
+    - code/__pycache__/trainer.cpython-311.pyc
+    - code/__pycache__/model.cpython-311.pyc
+    - code/__pycache__/losses.cpython-311.pyc
+    - code/__pycache__/data_utils.cpython-311.pyc
+    status: done
+    updated_at: '2026-03-14T09:44:09.690843'
+  design:
+    output_files:
+    - design/design.md
+    status: done
+    updated_at: '2026-03-14T08:23:00.002847'
+  experiments:
+    output_files:
+    - experiments/results.md
+    status: done
+    updated_at: '2026-03-14T12:57:15.215919'
+  ideation:
+    output_files:
+    - ideation/ideas.md
+    - ideation/selected_idea.md
+    status: done
+    updated_at: '2026-03-14T07:26:39.314839'
+  literature:
+    output_files:
+    - literature/survey.md
+    - literature/papers/2309.13363.md
+    - literature/papers/2111.13684.md
+    - literature/papers/2403.01091.md
+    - literature/papers/2505.12136.md
+    - literature/papers/1909.11197.md
+    - literature/papers/2205.01480.md
+    - literature/papers/2104.14917.md
+    - literature/papers/2408.10822.md
+    - literature/papers/1911.08415.md
+    - literature/papers/2104.12518.md
+    - literature/papers/2406.11244.md
+    - literature/papers/2006.11583.md
+    - literature/papers/2401.10134.md
+    - literature/papers/2301.07945.md
+    - literature/papers/2001.02908.md
+    - literature/papers/2305.18687.md
+    - literature/papers/2007.02842.md
+    - literature/papers/1709.04875.md
+    - literature/papers/2308.10425.md
+    - literature/papers/1912.07390.md
+    - literature/papers/1707.01926.md
+    status: done
+    updated_at: '2026-03-14T07:25:16.260155'
+  paper:
+    output_files:
+    - paper/draft.md
+    status: done
+    updated_at: '2026-03-14T13:07:11.504435'
+  review:
+    output_files: []
+    status: done
+    updated_at: '2026-03-14T13:07:27.721938'
+topic: Traffic flow prediction on PeMS dataset

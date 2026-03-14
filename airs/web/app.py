@@ -106,6 +106,12 @@ def create_app(project: str, workspace_root: Path | None = None) -> FastAPI:
     async def api_status():
         return JSONResponse(workspace.read_project_state())
 
+    @app.get("/api/costs")
+    async def api_costs():
+        from airs.cost import CostTracker
+        tracker = CostTracker.load(workspace)
+        return JSONResponse(tracker.summary())
+
     @app.get("/api/tree")
     async def api_tree():
         return JSONResponse({"tree": _build_tree(workspace, cfg, project)})

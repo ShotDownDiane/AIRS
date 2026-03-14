@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AIRS — {{ project }}</title>
   <style>
-    /* Reset */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* Layout */
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
            background: #0d1117; color: #c9d1d9; display: flex; height: 100vh; overflow: hidden; }
 
@@ -26,49 +23,48 @@
     #sidebar-header h1 { font-size: 16px; color: #58a6ff; margin-bottom: 4px; }
     #sidebar-header .topic { font-size: 12px; color: #8b949e; }
 
+    /* Cost panel */
+    #cost-panel {
+      padding: 12px 16px; border-bottom: 1px solid #30363d;
+      background: #0d1117; font-size: 12px;
+    }
+    #cost-panel .cost-title { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    #cost-panel .cost-total { font-size: 20px; font-weight: 700; color: #f0883e; margin-bottom: 6px; }
+    #cost-panel .cost-tokens { color: #8b949e; margin-bottom: 8px; }
+    #cost-panel .cost-breakdown { display: flex; flex-direction: column; gap: 3px; }
+    .cost-row { display: flex; justify-content: space-between; align-items: center; }
+    .cost-row .agent-name { color: #c9d1d9; font-size: 11px; }
+    .cost-row .agent-cost { color: #f0883e; font-size: 11px; font-weight: 600; }
+    .cost-bar { height: 3px; background: #21262d; border-radius: 2px; margin-top: 2px; }
+    .cost-bar-fill { height: 100%; background: #f0883e; border-radius: 2px; transition: width 0.3s; }
+
     /* Stage sections */
     .stage-section { border-bottom: 1px solid #21262d; }
     .stage-header {
-      padding: 10px 12px;
-      display: flex; align-items: center; gap: 8px;
-      cursor: pointer; user-select: none;
-      font-size: 13px; font-weight: 600;
+      padding: 10px 12px; display: flex; align-items: center; gap: 8px;
+      cursor: pointer; user-select: none; font-size: 13px; font-weight: 600;
     }
     .stage-header:hover { background: #1c2128; }
-
-    .badge {
-      font-size: 11px; padding: 2px 6px; border-radius: 10px;
-      margin-left: auto; font-weight: 500;
-    }
+    .badge { font-size: 11px; padding: 2px 6px; border-radius: 10px; margin-left: auto; font-weight: 500; }
     .badge-done    { background: #1a3a1a; color: #3fb950; border: 1px solid #2ea043; }
     .badge-running { background: #2a2000; color: #d29922; border: 1px solid #9e6a03; }
     .badge-failed  { background: #3a0000; color: #f85149; border: 1px solid #da3633; }
     .badge-pending { background: #1c2128; color: #8b949e; border: 1px solid #30363d; }
     .badge-skipped { background: #0d2030; color: #388bfd; border: 1px solid #1f6feb; }
-
     .stage-files { display: none; }
     .stage-section.open .stage-files { display: block; }
-
     .file-link {
-      display: block; padding: 5px 12px 5px 28px;
-      font-size: 12px; color: #8b949e;
-      text-decoration: none; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis;
+      display: block; padding: 5px 12px 5px 28px; font-size: 12px; color: #8b949e;
+      text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .file-link:hover { background: #1c2128; color: #c9d1d9; }
     .file-link.active { background: #1f3a5f; color: #58a6ff; }
 
     /* Main content */
-    #main {
-      flex: 1; overflow-y: auto;
-      padding: 24px 32px;
-    }
-
-    /* Toolbar */
+    #main { flex: 1; overflow-y: auto; padding: 24px 32px; }
     #toolbar {
       display: flex; align-items: center; gap: 12px;
-      margin-bottom: 20px; padding-bottom: 12px;
-      border-bottom: 1px solid #21262d;
+      margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #21262d;
     }
     #toolbar .breadcrumb { font-size: 13px; color: #8b949e; }
     #refresh-btn {
@@ -77,14 +73,10 @@
       border-radius: 6px; color: #c9d1d9; cursor: pointer; font-size: 12px;
     }
     #refresh-btn:hover { background: #30363d; }
-
-    #sse-status {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: #3fb950; margin-right: 4px;
-    }
+    #sse-status { width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 4px; }
     #sse-status.disconnected { background: #f85149; }
 
-    /* Content area */
+    /* Content */
     #content { max-width: 900px; }
     #content h1 { color: #e6edf3; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
     #content h2 { color: #e6edf3; margin: 24px 0 12px; }
@@ -94,54 +86,34 @@
     #content li { margin-bottom: 4px; }
     #content a { color: #58a6ff; text-decoration: none; }
     #content a:hover { text-decoration: underline; }
-    #content code {
-      background: #1c2128; padding: 2px 6px; border-radius: 4px;
-      font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px;
-    }
-    #content pre {
-      background: #1c2128; border: 1px solid #30363d; border-radius: 8px;
-      padding: 16px; overflow-x: auto; margin: 12px 0;
-    }
+    #content code { background: #1c2128; padding: 2px 6px; border-radius: 4px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; }
+    #content pre { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; }
     #content pre code { background: none; padding: 0; }
-    #content table {
-      width: 100%; border-collapse: collapse; margin: 16px 0;
-    }
-    #content th {
-      background: #161b22; padding: 8px 12px;
-      border: 1px solid #30363d; text-align: left; font-size: 13px;
-    }
-    #content td {
-      padding: 6px 12px; border: 1px solid #30363d;
-      font-size: 13px;
-    }
+    #content table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    #content th { background: #161b22; padding: 8px 12px; border: 1px solid #30363d; text-align: left; font-size: 13px; }
+    #content td { padding: 6px 12px; border: 1px solid #30363d; font-size: 13px; }
     #content tr:hover td { background: #1c2128; }
-    #content blockquote {
-      border-left: 3px solid #30363d; padding: 8px 16px;
-      color: #8b949e; margin: 12px 0;
-    }
-
-    /* Welcome screen */
-    .welcome {
-      text-align: center; padding: 80px 40px; color: #8b949e;
-    }
+    #content blockquote { border-left: 3px solid #30363d; padding: 8px 16px; color: #8b949e; margin: 12px 0; }
+    .welcome { text-align: center; padding: 80px 40px; color: #8b949e; }
     .welcome h2 { color: #58a6ff; font-size: 28px; margin-bottom: 12px; }
     .welcome p { font-size: 16px; margin-bottom: 8px; }
-
     .error { color: #f85149; }
 
-    /* Auto-refresh indicator */
+    /* Cost detail table in main area */
+    #cost-detail { margin-top: 20px; }
+    #cost-detail table { width: 100%; font-size: 12px; }
+    #cost-detail th { font-size: 11px; text-transform: uppercase; color: #8b949e; }
+
     #refresh-indicator {
       position: fixed; top: 12px; right: 12px;
       background: #1f6feb; color: white; padding: 6px 12px;
-      border-radius: 6px; font-size: 12px;
-      opacity: 0; transition: opacity 0.3s;
+      border-radius: 6px; font-size: 12px; opacity: 0; transition: opacity 0.3s;
     }
     #refresh-indicator.show { opacity: 1; }
   </style>
 </head>
 <body>
 
-<!-- Sidebar -->
 <nav id="sidebar">
   <div id="sidebar-header">
     <h1>AIRS Research</h1>
@@ -149,6 +121,14 @@
     <div style="margin-top:8px; font-size:11px; color:#8b949e;">
       Project: <strong style="color:#c9d1d9">{{ project }}</strong>
     </div>
+  </div>
+
+  <!-- Cost Panel -->
+  <div id="cost-panel">
+    <div class="cost-title">Pipeline Cost</div>
+    <div class="cost-total" id="cost-total">¥ --</div>
+    <div class="cost-tokens" id="cost-tokens">-- tokens</div>
+    <div class="cost-breakdown" id="cost-breakdown"></div>
   </div>
 
   {% for stage in tree %}
@@ -166,31 +146,19 @@
     <div class="stage-files">
       {% for file in stage.files %}
       <a class="file-link {% if file.path == current_path %}active{% endif %}"
-         href="/view/{{ file.path }}"
-         title="{{ file.path }}">
-        {{ file.name }}
-      </a>
+         href="/view/{{ file.path }}">{{ file.name }}</a>
       {% endfor %}
-      {% if not stage.files %}
-      <span class="file-link" style="color:#484f58; cursor:default;">No files yet</span>
-      {% endif %}
     </div>
   </div>
   {% endfor %}
 </nav>
 
-<!-- Main area -->
 <main id="main">
   <div id="toolbar">
-    <div id="sse-status" title="Live reload: connected"></div>
-    <div class="breadcrumb">
-      {% if current_path %}
-        {{ current_path }}
-      {% else %}
-        Home
-      {% endif %}
-    </div>
-    <button id="refresh-btn" onclick="window.location.reload()">⟳ Refresh</button>
+    <span id="sse-status"></span>
+    <span class="breadcrumb">{{ current_path or "Home" }}</span>
+    <a href="/view/logs/costs.json" style="font-size:12px; color:#f0883e; text-decoration:none; margin-left:8px;">Cost Details</a>
+    <button id="refresh-btn" onclick="window.location.reload()">Refresh</button>
   </div>
 
   <div id="content">
@@ -198,11 +166,10 @@
       {{ content_html | safe }}
     {% else %}
       <div class="welcome">
-        <h2>AIRS Research System</h2>
-        <p>Select a file from the sidebar to view its contents.</p>
-        {% if topic %}
-        <p style="margin-top:24px;color:#c9d1d9;">Topic: <em>{{ topic }}</em></p>
-        {% endif %}
+        <h2>AIRS Research Workspace</h2>
+        <p>Project: {{ project }}</p>
+        <p>Topic: {{ topic }}</p>
+        <p style="margin-top:20px; font-size:14px;">Select a file from the sidebar to view its contents.</p>
       </div>
     {% endif %}
   </div>
@@ -211,33 +178,56 @@
 <div id="refresh-indicator">Page updated</div>
 
 <script>
-  // Toggle stage sections
   function toggleStage(name) {
-    const el = document.getElementById('stage-' + name);
-    el.classList.toggle('open');
+    document.getElementById('stage-' + name).classList.toggle('open');
   }
 
-  // SSE for auto-refresh
+  // SSE
   const sseStatus = document.getElementById('sse-status');
   const indicator = document.getElementById('refresh-indicator');
-
   function connectSSE() {
     const es = new EventSource('/events');
-    es.onopen = () => { sseStatus.classList.remove('disconnected'); };
-    es.onerror = () => {
-      sseStatus.classList.add('disconnected');
-      setTimeout(connectSSE, 3000);
-    };
+    es.onopen = () => sseStatus.classList.remove('disconnected');
+    es.onerror = () => { sseStatus.classList.add('disconnected'); setTimeout(connectSSE, 3000); };
     es.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === 'change') {
-        // Show indicator briefly then reload
         indicator.classList.add('show');
         setTimeout(() => window.location.reload(), 800);
       }
     };
   }
   connectSSE();
+
+  // Cost polling
+  async function updateCosts() {
+    try {
+      const resp = await fetch('/api/costs');
+      const data = await resp.json();
+
+      document.getElementById('cost-total').textContent = '¥ ' + data.total_cost_rmb.toFixed(4);
+      const totalTok = data.total_input_tokens + data.total_output_tokens;
+      document.getElementById('cost-tokens').textContent =
+        totalTok.toLocaleString() + ' tokens (' + data.total_calls + ' calls)';
+
+      const breakdown = document.getElementById('cost-breakdown');
+      breakdown.innerHTML = '';
+      const byAgent = data.by_agent || {};
+      const maxCost = Math.max(...Object.values(byAgent), 0.0001);
+
+      for (const [agent, cost] of Object.entries(byAgent).sort((a,b) => b[1]-a[1])) {
+        const pct = (cost / maxCost * 100).toFixed(0);
+        breakdown.innerHTML += `
+          <div class="cost-row">
+            <span class="agent-name">${agent}</span>
+            <span class="agent-cost">¥${cost.toFixed(4)}</span>
+          </div>
+          <div class="cost-bar"><div class="cost-bar-fill" style="width:${pct}%"></div></div>`;
+      }
+    } catch(e) {}
+  }
+  updateCosts();
+  setInterval(updateCosts, 5000);
 </script>
 </body>
 </html>
